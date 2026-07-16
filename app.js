@@ -1,11 +1,18 @@
 import express from 'express';
 import Groq from 'groq-sdk';
 import nodemailer from 'nodemailer';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import 'dotenv/config';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(express.json());
-app.use(express.static('.'));
+
+// Questo comando dice al server di mostrare la cartella con i file grafici
+app.use(express.static(path.join(__dirname, 'www')));
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
@@ -19,6 +26,11 @@ const transporter = nodemailer.createTransport({
 
 const utentiRegistrati = {}; 
 const otps = {};
+
+// Invia il file index.html principale quando si visita il link
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'www', 'index.html'));
+});
 
 app.post('/api/auth/request-otp', async (req, res) => {
     const { email, password } = req.body;
@@ -35,21 +47,18 @@ app.post('/api/auth/request-otp', async (req, res) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     otps[email] = otp;
 
-    console.log('🌙 [LUNA AI] Spedizione e-mail protetta in corso...');
-
     const mailOptions = {
         from: `"Luna AI Security" <${process.env.GMAIL_USER}>`,
         to: email,
         subject: 'Il tuo codice segreto OTP di Luna AI 🌙',
-        text: 'Il tuo codice di verifica OTP per accedere a Luna AI e: ' + otp
+        text: 'Il tuo codice di verifica OTP per accedere a Luna AI è: ' + otp
     };
 
     try {
         await transporter.sendMail(mailOptions);
         res.json({ success: true });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Impossibile inviare la mail di sicurezza." });
+        res.status(500).json({ error: "Impossibile inviare la mail." });
     }
 });
 
@@ -85,4 +94,5 @@ app.post('/api/chat', async (req, res) => {
     }
 });
 
-app.listen(3000, () => console.log('🚀 Server Luna AI Pronto!'));
+app.listen(3000, () => console.log('🚀 Server pronto!'));
+
