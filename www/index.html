@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Luna AI</title>
+    <style>
+        body { background: #131314; color: #e3e3e3; font-family: system-ui, -apple-system, sans-serif; display: flex; flex-direction: column; height: 100vh; margin: 0; }
+        .header { padding: 15px 20px; background: #1e1f20; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #3c4043; font-size: 20px; font-weight: bold; color: #fff; }
+        .header .logo-area { display: flex; align-items: center; }
+        .header .logo-icon { margin-right: 10px; font-size: 22px; }
+        
+        .color-luna { color: #fbbc04; } /* Giallo Luna */
+        .color-ai { color: #ea4335; }   /* Rosso AI */
+        
+        .btn-logout { background: #3c4043; border: none; color: #e3e3e3; padding: 6px 14px; border-radius: 12px; cursor: pointer; font-size: 14px; }
+        #auth-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #131314; display: flex; justify-content: center; align-items: center; z-index: 1000; }
+        .auth-box { background: #1e1f20; padding: 40px; border-radius: 24px; border: 1px solid #3c4043; width: 90%; max-width: 400px; text-align: center; }
+        .auth-box h2 { margin-top: 0; margin-bottom: 20px; }
+        .auth-box input { width: 100%; padding: 12px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #3c4043; background: #131314; color: white; box-sizing: border-box; outline: none; text-align: center; font-size: 16px; }
+        #main-container { display: none; flex: 1; flex-direction: column; height: 100%; }
+        #chat { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 20px; max-width: 800px; width: 100%; margin: 0 auto; box-sizing: border-box; }
+        .msg { max-width: 80%; padding: 14px 18px; border-radius: 20px; line-height: 1.6; font-size: 16px; word-wrap: break-word; }
+        .user { background: #282a2d; align-self: flex-end; border-bottom-right-radius: 4px; }
+        .ai { background: transparent; align-self: flex-start; }
+        img { max-width: 100%; border-radius: 16px; margin-top: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .input-area { padding: 20px; display: flex; justify-content: center; background: #131314; }
+        .box { background: #1e1f20; border-radius: 30px; display: flex; width: 100%; max-width: 800px; padding: 6px 12px 6px 20px; align-items: center; box-sizing: border-box; border: 1px solid #3c4043; }
+        .box input { flex: 1; background: transparent; border: none; color: #e3e3e3; font-size: 16px; outline: none; padding: 10px 0; }
+        .btn-invia { background: #004a77; border: none; color: #c2e7ff; padding: 12px 24px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div id="auth-screen">
+        <div class="auth-box">
+            <h2>Accedi a <span class="color-luna">Luna</span> <span class="color-ai">AI</span> 🌙</h2>
+            <div id="step-login">
+                <p>Inserisci Email e Password del tuo account</p>
+                <input type="email" id="auth-email" placeholder="esempio@gmail.com">
+                <input type="password" id="auth-password" placeholder="Inserisci Password">
+                <button class="btn-invia" onclick="richiediAccesso()">Invia Dati</button>
+            </div>
+            <div id="step-otp" style="display:none;">
+                <p style="color: #81c995;">Dati verificati con successo!</p>
+                <p>Inserisci il codice segreto OTP ricevuto sulla tua app mail</p>
+                <input type="text" id="auth-code" placeholder="000000">
+                <button class="btn-invia" onclick="verificaOTP()">Verifica ed Entra</button>
+            </div>
+        </div>
+    </div>
+    <div id="main-container">
+        <div class="header">
+            <div class="logo-area"><span class="logo-icon">🌙</span> <span class="color-luna">Luna</span> <span class="color-ai">AI</span></div>
+            <button class="btn-logout" onclick="logout()">Esci</button>
+        </div>
+        <div id="chat"><div class="msg ai">Benvenuto su Luna AI! Chiedimi qualsiasi cosa o usa <b>/immagina</b>.</div></div>
+        <div class="input-area"><div class="box"><input type="text" id="prompt" placeholder="Chiedi a Luna AI o digita /immagina..."><button class="btn-invia" onclick="invia()">Invia</button></div></div>
+    </div>
+    <script>
+        window.onload = function() { if (localStorage.getItem('luna_session')) { mostraApp(); } };
+        function mostraApp() { document.getElementById('auth-screen').style.display = 'none'; document.getElementById('main-container').style.display = 'flex'; }
+        
+        function logout() {
+            localStorage.removeItem('luna_session');
+            document.getElementById('main-container').style.display = 'none';
+            document.getElementById('auth-screen').style.display = 'flex';
+            document.getElementById('step-otp').style.display = 'none';
+            document.getElementById('step-login').style.display = 'block';
+            document.getElementById('auth-password').value = '';
+        }
+
+        async function richiediAccesso() {
+            const email = document.getElementById('auth-email').value;
+            const password = document.getElementById('auth-password').value;
+            if(!email || !password) return alert("Inserisci sia l email che la password!");
+            
+            try {
+                const res = await fetch('https://onrender.com', { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify({ email, password }) 
+                });
+                const data = await res.json();
+                
+                if(res.ok) { 
+                    document.getElementById('step-login').style.display = 'none'; 
+                    document.getElementById('step-otp').style.display = 'block'; 
+                } else { 
+                    alert(data.error || "Errore di autenticazione."); 
+                }
+            } catch(e) {
+                alert("Errore di connessione al server internet.");
+            }
+        }
+
+        async function verificaOTP() {
+            const email = document.getElementById('auth-email').value;
+            const otp = document.getElementById('auth-code').value;
+            const res = await fetch('https://onrender.com', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, otp }) });
+            const data = await res.json();
+            if(data.success) { localStorage.setItem('luna_session', data.token); mostraApp(); } else { alert(data.error); }
+        }
+
+        async function invia() {
+            const input = document.getElementById('prompt'); const chat = document.getElementById('chat'); const testoPrompt = input.value.trim(); if(!testoPrompt) return;
+            chat.innerHTML += `<div class="msg user">${testoPrompt}</div>`; input.value = ''; chat.scrollTop = chat.scrollHeight;
+            const idCaricamento = 'load-' + Date.now(); chat.innerHTML += `<div class="msg ai" id="${idCaricamento}"><i>Luna sta rispondendo...</i></div>`; chat.scrollTop = chat.scrollHeight;
+            try {
+                const res = await fetch('https://onrender.com', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: testoPrompt }) });
+                const data = await res.json(); const el = document.getElementById(idCaricamento);
+                if(data.type === 'image') { el.innerHTML = `<img src="${data.content}">`; } else { el.innerHTML = data.content; }
+            } catch (error) { document.getElementById(idCaricamento).innerHTML = "Errore connessione."; }
+            chat.scrollTop = chat.scrollHeight;
+        }
+        document.getElementById('prompt').addEventListener('keypress', e => { if (e.key === 'Enter') invia(); });
+    </script>
+</body>
+</html>

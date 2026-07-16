@@ -1,0 +1,36 @@
+name: Compila APK Luna AI Definitivo
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Scarica il codice dal progetto
+      uses: actions/checkout@v4
+
+    - name: Configura Java 21 ufficiale per Gradle 8
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '21'
+
+    - name: Configura l SDK di Android in automatico
+      uses: android-actions/setup-android@v3
+
+    - name: Concedi i permessi al compilatore
+      run: chmod +x android/gradlew
+
+    - name: Compila il file APK finale
+      run: |
+        cd android
+        ./gradlew assembleDebug
+
+    - name: Fai scaricare il file APK finito
+      uses: actions/upload-artifact@v4
+      with:
+        name: Luna-AI-Applicazione
+        path: android/app/build/outputs/apk/debug/app-debug.apk
