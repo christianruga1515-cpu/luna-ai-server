@@ -75,7 +75,7 @@
             if(!email || !password) return alert("Inserisci sia l email che la password!");
             
             try {
-                const res = await fetch('https://onrender.com', { 
+                const res = await fetch('/api/auth/request-otp', { 
                     method: 'POST', 
                     headers: { 'Content-Type': 'application/json' }, 
                     body: JSON.stringify({ email, password }) 
@@ -96,7 +96,7 @@
         async function verificaOTP() {
             const email = document.getElementById('auth-email').value;
             const otp = document.getElementById('auth-code').value;
-            const res = await fetch('https://onrender.com', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, otp }) });
+            const res = await fetch('/api/auth/verify-otp', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email, otp }) });
             const data = await res.json();
             if(data.success) { localStorage.setItem('luna_session', data.token); mostraApp(); } else { alert(data.error); }
         }
@@ -106,7 +106,7 @@
             chat.innerHTML += `<div class="msg user">${testoPrompt}</div>`; input.value = ''; chat.scrollTop = chat.scrollHeight;
             const idCaricamento = 'load-' + Date.now(); chat.innerHTML += `<div class="msg ai" id="${idCaricamento}"><i>Luna sta rispondendo...</i></div>`; chat.scrollTop = chat.scrollHeight;
             try {
-                const res = await fetch('https://onrender.com', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: testoPrompt }) });
+                const res = await fetch('/api/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ prompt: testoPrompt }) });
                 const data = await res.json(); const el = document.getElementById(idCaricamento);
                 if(data.type === 'image') { el.innerHTML = `<img src="${data.content}">`; } else { el.innerHTML = data.content; }
             } catch (error) { document.getElementById(idCaricamento).innerHTML = "Errore connessione."; }
